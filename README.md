@@ -39,6 +39,28 @@
 <!-- The path a submission takes, from arriving to the label a reader sees.
      Six or seven steps — this is the trace you wrote in Milestone 1. -->
 
+1. **A writer sends the text.** A client POSTs JSON to `/submit` with `text`
+   and `creator_id`. *Adds:* the raw material, plus who it belongs to.
+2. **The route checks the request** (`app.py::submit`). It rejects missing,
+   empty, non-string, too-short or too-long text with a 400 before any model
+   runs, and logs the rejection. *Adds:* a guarantee that everything after
+   this step gets clean input, and a trace of anything refused.
+3. **The model signal reads it** (`detector.model_signal`). gpt2 measures how
+   predictable the text is and squashes that onto 0–1. *Adds:* `model_score`,
+   where higher means more likely AI.
+4. **The style signal measures it** (`stylometry.style_signal`). This looks
+   at the shape of the text: sentence-length spread, vocabulary repetition
+   and punctuation. *Adds:* `style_score` on the same 0–1 scale, also with
+   higher meaning more likely AI.
+5. **The two are combined** (`scoring.combine_signals`). *Adds:* one combined
+   score, the single number every later decision depends on.
+6. **The score becomes words** (`scoring.score_to_label`, thresholds in
+   `config.py`). *Adds:* a `guess` (`human` / `unsure` / `ai`) and the label
+   sentence the reader actually sees.
+7. **The decision is logged and returned** (`audit.log_decision`). The
+   service gives it a `content_id`, writes all the scores and the label to
+   the audit log, and sends it all back. *Adds:* a permanent record, plus the
+   one handle the writer needs if they want to appeal.
 
 
 ---
@@ -53,19 +75,43 @@
 
 ### Signal one — the model signal
 
-**What it measures:**
+**What it measures:** How *predictable* the text is to a language model
+(gpt2). This is perplexity: how surprised the model is by each next word. Low
+perplexity gets a high score, meaning more likely AI.
 
-**Why that might differ between human and AI writing:**
+**Why that might differ between human and AI writing:** A language model
+writes by picking a likely next word again and again, so its output is text a
+model finds easy to predict. Human writing wanders more. People make odd word
+choices, change direction suddenly, and reach for specific details over
+typical ones.
 
-**What it can't see:**
+**What it can't see:** *Who* wrote the text. Predictability is not
+authorship. What this signal really rewards is common words in short, ordinary
+sentences, and many real people write that way: second-language writers
+sticking to words they're sure of, younger writers, anyone writing plainly on
+purpose. Their honest work can score as machine-like. It also fails the other
+way. AI text pushed toward rare words or ornate phrasing ("write it more
+unusually") surprises the model and can pass as human. It only reads the
+first ~400 tokens, so anything after that is invisible to it.
 
 ### Signal two — the style signal
 
-**What it measures:**
+**What it measures:** The *shape* of the text, without reading its meaning:
+how much sentence length varies, how much vocabulary repeats (type-token
+ratio), and how much varied punctuation is used. Even sentences, a narrow
+vocabulary and sparse punctuation score higher, meaning more likely AI.
 
-**Why that might differ between human and AI writing:**
+**Why that might differ between human and AI writing:** Going for the most
+likely next word, on average, produces even, mid-length sentences and a
+narrower band of vocabulary. Human writing is lumpier: a three-word sentence
+next to a forty-word one, a dash, a fragment.
 
-**What it can't see:**
+**What it can't see:** What the text *says*. It can't read at all, so
+anything that changes the shape without changing the substance moves the
+score. Someone can take AI text and break up sentences, add typos, or paste
+in a quotation to make it look "human". A careful human writer with a tidy,
+even style can look "AI". Type-token ratio also falls as text gets longer, so
+length alone can move the score.
 
 ### The combining rule
 
