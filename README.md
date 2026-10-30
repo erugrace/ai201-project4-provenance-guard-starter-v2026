@@ -155,9 +155,9 @@ in `config.py`.
 The last two are the ones that matter. The lightly-edited AI lands in
 "unsure" rather than passing as human. The formal human writing isn't
 accused, but only because the model signal pulled it down: the style signal
-alone leaned AI, and the combined 0.57 is only 0.08 below the AI line. That
-gap is the false-positive risk my thresholds in Milestone 5 have to account
-for.
+alone leaned AI, and the combined 0.57 was only 0.08 below the original AI
+line of 0.65. That gap is why I raised the AI line to 0.70 in Milestone 5
+(see Label Variants).
 
 **Where it lives:** `scoring.py::combine_signals`
 
@@ -191,15 +191,27 @@ writing in the same way.
 
 | Label | Score range | The exact text a reader sees |
 |---|---|---|
-| high-confidence human |  |  |
-| unsure |  |  |
-| high-confidence AI |  |  |
+| high-confidence human | 0.00 – 0.35 | This reads like it was written by a person. |
+| unsure | 0.35 – 0.70 | We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it. |
+| high-confidence AI | 0.70 – 1.00 | Parts of this text look a lot like AI-generated writing. This is an automated estimate and it can be wrong. If you wrote it yourself, you can appeal and a person will review it. |
+
+The thresholds are `HUMAN_THRESHOLD = 0.35` and `AI_THRESHOLD = 0.70` in
+`config.py`. I raised the AI line from 0.65 to 0.70 because my formal human
+sample (a real lab report) scored 0.57, too close to being called AI. My
+clearly-AI sample scored 0.81, so it's still caught. I tested all three
+labels through `/submit`: clearly_ai got the AI label (0.81), clearly_human
+got the human label (0.22), and borderline and formal_human both got unsure
+(0.50 and 0.57).
 
 **Why I worded the "unsure" one this way:**
-<!-- It's the hardest of the three. It has to admit uncertainty without
-     sounding like an accusation, because the person reading it may well have
-     written every word themselves. -->
 
+The person reading "unsure" may well have written every word themselves. My
+formal human sample landed here. So it says plainly that we *can't tell*,
+rather than hinting at a suspicion. "That's common, and it isn't an
+accusation" is there because, without it, any mention of AI reads as one. It
+talks about "this" (the text), never "you" (the writer), until the last
+sentence, which gives them something to do: add a note, and a person reviews
+it. No numbers and no "threshold". A score of 0.57 means nothing to a writer.
 
 
 ---
@@ -216,40 +228,40 @@ writing in the same way.
      two off the response, so leaving them out costs you next unit's
      diagnostics. -->
 
-The text is `samples/clearly_ai.json`, read out of the file so the full
-paragraph doesn't need pasting into the command.
+The text is `samples/formal_human.json`, a real lab report. It's the case
+that matters most: formal human writing that my style signal leans AI on.
 
 ```bash
 $ curl -X POST http://127.0.0.1:5000/submit \
   -H "Content-Type: application/json" \
-  -d "$(python -c 'import json; t=json.load(open("samples/clearly_ai.json"))["text"]; print(json.dumps({"text": t, "creator_id": "derin"}))')"
+  -d "$(python -c 'import json; t=json.load(open("samples/formal_human.json"))["text"]; print(json.dumps({"text": t, "creator_id": "derin"}))')"
 ```
 
 ```json
 {
-  "confidence": 0.5,
-  "content_id": "c_a3d699f87c4a",
+  "confidence": 0.5675,
+  "content_id": "c_b858ab0f5c1e",
   "guess": "unsure",
-  "label": "not built yet",
-  "model_score": 0.7544,
-  "style_score": null
+  "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+  "model_score": 0.468,
+  "style_score": 0.6339
 }
 ```
-
-<!-- Unit 7, Milestone 3: model_score is real. confidence, guess and label are
-     placeholders, and style_score is null until Milestone 4. -->
-
 
 **An appeal**
 
 ```bash
 $ curl -X POST http://127.0.0.1:5000/appeal \
   -H "Content-Type: application/json" \
-  -d '{"content_id": "...", "reasoning": "..."}'
+  -d '{"content_id": "c_b858ab0f5c1e", "reasoning": "I wrote this lab report myself for my fluid mechanics course."}'
 ```
 
 ```json
-
+{
+  "content_id": "c_b858ab0f5c1e",
+  "message": "Thanks — your appeal is recorded. A person will review this submission and your explanation.",
+  "status": "under_review"
+}
 ```
 
 **What the log shows afterwards**
@@ -263,38 +275,40 @@ $ curl "http://127.0.0.1:5000/log?limit=3"
   "count": 3,
   "entries": [
     {
-      "creator_id": "u1",
-      "event": "rejected",
-      "reason": "text_too_long",
-      "status": "rejected",
-      "timestamp": "2026-10-30T03:13:05+00:00"
-    },
-    {
       "creator_id": null,
       "event": "rejected",
       "reason": "missing_creator_id",
       "status": "rejected",
-      "timestamp": "2026-10-30T03:13:05+00:00"
+      "timestamp": "2026-10-30T04:08:38+00:00"
     },
     {
-      "combined_score": null,
-      "content_id": "c_a3d699f87c4a",
+      "combined_score": 0.5675,
+      "content_id": "c_b858ab0f5c1e",
       "creator_id": "derin",
       "guess": "unsure",
-      "label": null,
-      "model_score": 0.7544,
+      "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+      "model_score": 0.468,
       "status": "decided",
-      "style_score": null,
-      "timestamp": "2026-10-30T03:18:18+00:00"
+      "style_score": 0.6339,
+      "timestamp": "2026-10-30T04:10:19+00:00"
+    },
+    {
+      "content_id": "c_b858ab0f5c1e",
+      "creator_id": "derin",
+      "event": "appeal",
+      "reasoning": "I wrote this lab report myself for my fluid mechanics course.",
+      "status": "under_review",
+      "timestamp": "2026-10-30T04:10:19+00:00"
     }
   ]
 }
 ```
 
-<!-- The last entry is the submission above: same content_id, same
-     model_score. The two before it are bad-input tests (text over 20,000
-     characters, missing creator_id), rejected with a 400 and still logged. -->
-
+<!-- The decision and the appeal sit side by side with the same content_id.
+     The original decision is never overwritten: it stays "decided", and the
+     appeal after it moves the item to "under_review". The first entry is an
+     earlier request refused for having no creator_id - rejected with a 400
+     and still logged. -->
 
 ---
 
