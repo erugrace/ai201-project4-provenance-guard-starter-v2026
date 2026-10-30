@@ -323,8 +323,8 @@ $ curl "http://127.0.0.1:5000/log?limit=3"
 
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
+- *What I asked for:* A review on my criteria
+- *What came back:* 
 - *What I changed:*
 
 **Moment 2**
@@ -332,6 +332,37 @@ $ curl "http://127.0.0.1:5000/log?limit=3"
 - *What I asked for:*
 - *What came back:*
 - *What I changed:*
+
+**Moment 1**
+
+- *What I asked for:* I had drafted five acceptance criteria for `criteria.md`
+  and asked Claude to check whether they made sense and add a reason under
+  each, before anything went into the file.
+- *What came back:* A review of each criterion. It pointed out that my first
+  one ("0.3 times should a human writing be labelled as AI") was ambiguous and,
+  read as 30%, far too easy a target. It suggested a measurable rewrite for each.
+- *What I changed:* I rewrote criterion 1 in my own terms: at least 8 of 10
+  human pieces labelled human, rather than a cap on accusations. I set the
+  bad-input minimum to 10 words instead of the suggested 50. I took the
+  suggested versions of 4 (a 0.3 gap) and 5 (labels describe the text, never
+  accuse the writer), and the reasons under each are based on the review.
+
+**Moment 2**
+
+- *What I asked for:* After both signals ran on my samples, Claude suggested
+  an equal-weight average as the combining rule. I said I wanted to weight the
+  style signal more.
+- *What came back:* A table showing what 0.5/0.5, 0.4/0.6 and 0.3/0.7 would
+  do to each of my samples, with the case for style (it separated my AI and
+  human samples by 0.77, against 0.31 for the model signal) and the case
+  against (style is the cheaper signal to fool, and its ranges came from only
+  three samples). It recommended 0.4/0.6.
+- *What I changed:* I went with 0.4/0.6 rather than the equal weights first
+  suggested, and rather than 0.3/0.7, which barely changed my results but
+  added risk. When my formal human sample then scored 0.57, close to the AI
+  line, I raised `AI_THRESHOLD` from 0.65 to 0.70 to give formal writers more
+  room.
+
 
 <!-- ═══════════════════════ UNIT 8 — THE TEST ═══════════════════════ -->
 
