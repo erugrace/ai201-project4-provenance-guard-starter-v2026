@@ -1,0 +1,7 @@
+{"timestamp": "2026-10-30T03:13:05+00:00", "content_id": "c_89fb9ffa32c7", "creator_id": "u1", "guess": "unsure", "model_score": 0.7544, "style_score": null, "combined_score": null, "label": null, "status": "decided"}
+{"timestamp": "2026-10-30T03:13:05+00:00", "creator_id": null, "event": "rejected", "status": "rejected", "reason": "missing_or_empty_text"}
+{"timestamp": "2026-10-30T03:13:05+00:00", "creator_id": "u1", "event": "rejected", "status": "rejected", "reason": "missing_or_empty_text"}
+{"timestamp": "2026-10-30T03:13:05+00:00", "creator_id": "u1", "event": "rejected", "status": "rejected", "reason": "text_too_short"}
+{"timestamp": "2026-10-30T03:13:05+00:00", "creator_id": "u1", "event": "rejected", "status": "rejected", "reason": "text_too_long"}
+{"timestamp": "2026-10-30T03:13:05+00:00", "creator_id": null, "event": "rejected", "status": "rejected", "reason": "missing_creator_id"}
+{"timestamp": "2026-10-30T03:18:18+00:00", "content_id": "c_a3d699f87c4a", "creator_id": "derin", "guess": "unsure", "model_score": 0.7544, "style_score": null, "combined_score": null, "label": null, "status": "decided"}
