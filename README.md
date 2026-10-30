@@ -118,9 +118,32 @@ length alone can move the score.
 <!-- Write the rule in words, then give the numbers. What happens when the two
      signals disagree? -->
 
-**The rule:**
+**The rule:** A weighted average of the two signals, leaning on the style
+signal. Both scores run 0–1 with higher meaning more likely AI, so the
+combined score does too. When the two disagree, the average lands between
+them, usually in the middle of the scale. That's on purpose: two methods
+disagreeing *is* uncertainty, and a borderline score gets the "unsure" label
+instead of an accusation.
+
+I weight style more because on my samples it separated AI from human far
+better than the model signal did (a gap of 0.77 against 0.31), and it caught
+the lightly-edited AI that the model signal missed. I don't weight it any
+more than 0.6, because style is the cheaper signal to fool. Adding commas or
+breaking up sentences moves it, so the model signal keeps enough weight that
+style tricks alone can't decide the result.
 
 **The numbers:**
+
+    combined = 0.4 × model_score + 0.6 × style_score
+
+The weights are `WEIGHT_MODEL_SIGNAL = 0.4` and `WEIGHT_STYLE_SIGNAL = 0.6`
+in `config.py`.
+
+| Sample | model_score | style_score | combined | Label band |
+|---|---|---|---|---|
+| clearly_ai | 0.75 | 0.84 | 0.80 | high-confidence AI |
+| clearly_human | 0.44 | 0.07 | 0.22 | high-confidence human |
+| borderline (lightly-edited AI) | 0.35 | 0.61 | 0.51 | unsure |
 
 **Where it lives:** `scoring.py::combine_signals`
 
@@ -128,6 +151,18 @@ length alone can move the score.
      somewhere else, say where. -->
 
 **A case where my two signals split, and what my rule does with it:**
+
+`samples/borderline.json` is the AI paragraph lightly edited with a few
+informal words ("frazzled", "wreck focus") and a dash and a semicolon. The
+model signal scored it **0.35**, which on its own would be high-confidence
+human: the new words were hard for gpt2 to predict. The style signal scored
+it **0.61**, leaning AI: the AI's even sentence rhythm survived the edits.
+
+My rule gives 0.4 × 0.35 + 0.6 × 0.61 = **0.51**, which lands in "unsure".
+That's the result I want. Neither signal is sure, they point in opposite
+directions, and it's lightly-edited AI, so calling it human would let it
+through and calling it AI would risk accusing someone who edits their own
+writing in the same way.
 
 
 

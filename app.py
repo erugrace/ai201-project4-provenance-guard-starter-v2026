@@ -25,7 +25,10 @@ Routes:
 """
 
 import uuid
+
 import detector
+import scoring
+import stylometry
 
 from flask import Flask, jsonify, request
 
@@ -227,24 +230,33 @@ def submit():
     except detector.DetectorUnavailable as exc:
         return jsonify({"error": "detector_unavailable", "message": str(exc)}), 503
 
+    # Step 5 - the second signal: the shape of the text, no model needed
+    style_score = stylometry.style_signal(text)
+
+    # Step 6 - one score from two signals (rule in scoring.combine_signals)
+    combined_score = scoring.combine_signals(model_score, style_score)
+
     # Step 4 - log the decision. The content_id is what /appeal needs later.
-    # guess, confidence and label are placeholders until Milestones 4 and 5.
+    # Both signal scores go in beside the combined one, so unit 8 can tell
+    # which signal moved. guess and label are placeholders until Milestone 5.
     content_id = f"c_{uuid.uuid4().hex[:12]}"
     audit.log_decision(
         content_id=content_id,
         creator_id=creator_id,
         guess="unsure",
         model_score=model_score,
+        style_score=style_score,
+        combined_score=combined_score,
         status="decided",
     )
 
     return jsonify({
         "content_id": content_id,
         "guess": "unsure",
-        "confidence": 0.5,
+        "confidence": combined_score,
         "label": "not built yet",
         "model_score": model_score,
-        "style_score": None,
+        "style_score": style_score,
     }), 200
 
 
