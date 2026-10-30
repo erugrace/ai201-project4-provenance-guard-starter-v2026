@@ -70,7 +70,7 @@ AI**.
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
-| `text` | string | yes | Not empty or only whitespace. At least 50 words (the signals mean nothing on less). At most 20,000 characters. |
+| `text` | string | yes | Not empty or only whitespace. At least 10 words (the signals mean nothing on less). At most 20,000 characters. |
 | `creator_id` | string | yes | Not empty. Identifies the writer. Stored in the log and needed for appeals. |
 
 **Success response — `200 OK`**
@@ -104,7 +104,7 @@ All errors have the same shape: `{"error": "<code>", "message": "<plain English>
 | Status | `error` | When |
 |---|---|---|
 | 400 | `bad_request` | Body isn't JSON, or `text`/`creator_id` is missing, empty, or not a string. |
-| 400 | `text_too_short` | Fewer than 50 words. |
+| 400 | `text_too_short` | Fewer than 10 words. |
 | 400 | `text_too_long` | More than 20,000 characters. |
 | 503 | `detector_unavailable` | The local model couldn't load. |
 
@@ -143,7 +143,7 @@ Appealing the same item twice records a second appeal and still returns 200.
 Could someone build against this without asking me anything?
 - What does a high `confidence` mean? Answered: more AI, not "more sure".
 - What are the possible values of `guess`? Answered: exactly three strings.
-- What are the input limits? Answered: 50 words minimum, 20,000 characters
+- What are the input limits? Answered: 10 words minimum, 20,000 characters
   maximum.
 - What happens with an unknown `content_id`? Answered: 404.
 - Still open: should one `creator_id` be able to appeal another creator's

@@ -42,63 +42,80 @@ Two things worth knowing before you pick numbers:
   a **miss**.
 
 ---
-## 1.
+## 1. Human writing is recognised as human
 
 <!-- Your criterion. It must name a number. -->
 
+Of 10 pieces of writing by real people, at least 8 are labelled
+high-confidence human, in each of the 3 trials.
 
-
-**Why this target:**
-
-
-
----
-
-## 2.
-
-<!-- Your criterion. -->
-
-
-
-**Why this target:**
-
-
+**Why this target:** On a writing site, the people using the service are
+mostly real writers, and they need to be recognised as writers. Calling a
+real person's work AI costs them far more than a missed AI text costs the
+site. 8 of 10 is demanding but possible. It has to hold in every trial
+because the model can score the same text differently each run.
 
 ---
 
-## 3.
+## 2. Borderline text lands in "unsure", and every label is reachable
 
 <!-- Your criterion. -->
 
+Of 5 texts I judge borderline (e.g. lightly edited AI, plain human writing),
+at least 4 get a combined score between 0.35 and 0.65 and the "unsure"
+label. Across all my test texts, each of the three labels appears at least
+once.
 
-
-**Why this target:**
-
-
+**Why this target:** "Unsure" is the safety net for the writers my signals
+misread, so it has to catch the hard cases instead of pushing them to one
+side. A label that no text can reach means part of the system doesn't work.
 
 ---
 
-## 4.
+## 3. Bad input is refused cleanly, never crashes
 
 <!-- Your criterion. -->
 
+Of 5 malformed requests (missing `text`, empty `text`, `text` that is only
+spaces, `text` under 10 words, `text` over 20,000 characters), all 5 return
+a 400 with a JSON error message, none return a 500, and each is logged as
+rejected.
 
-
-**Why this target:**
-
-
+**Why this target:** A crash on bad input is one of the most common real
+failures, and unit 8's attacks will send exactly these. Under 10 words gives
+the signals too little to measure, so a score would be a guess dressed up as
+a decision. It's 5 of 5 because a single 500 is a crash, not a near miss.
 
 ---
 
-## 5.
+## 4. Clearly-AI and clearly-human text score far apart
 
 <!-- Your criterion. -->
 
+The average combined score of my clearly-AI texts is at least 0.3 higher
+than the average combined score of my clearly-human texts, in each of the 3
+trials.
 
+**Why this target:** If the two kinds of text score close together, no
+threshold can separate them, and every label is close to a guess. A gap of
+0.3 is as wide as the whole 0.35–0.65 "unsure" band. Anything smaller and
+clearly-AI and clearly-human text could both sit inside it.
 
-**Why this target:**
+---
 
+## 5. Labels describe the text, never accuse the person
 
+<!-- Your criterion. -->
+
+None of the three labels says the writer "used AI", "cheated" or
+"plagiarised". All three describe the text, not the person. The
+high-confidence AI and unsure labels both tell the reader how to appeal.
+
+**Why this target:** The person reading the AI label may well have written
+every word themselves, as in the false-positive trace from Milestone 1. A
+label shouldn't accuse them, and it should give them a way out. This is all
+or nothing because there are only three labels and every reader sees one of
+them.
 
 ---
 
