@@ -97,9 +97,15 @@ first ~400 tokens, so anything after that is invisible to it.
 ### Signal two — the style signal
 
 **What it measures:** The *shape* of the text, without reading its meaning:
-how much sentence length varies, how much vocabulary repeats (type-token
-ratio), and how much varied punctuation is used. Even sentences, a narrow
-vocabulary and sparse punctuation score higher, meaning more likely AI.
+how much sentence length varies (standard deviation ÷ mean of words per
+sentence) and how much punctuation is used (commas, semicolons, colons,
+dashes, brackets and quote marks per word). Even sentences and sparse
+punctuation score higher, meaning more likely AI. The score is the average of
+the two, each scaled onto 0–1.
+
+I also measured type-token ratio (how much vocabulary repeats), but left it
+out of the score: on my samples it ran the *wrong* way, with the AI text at
+0.85 and the human text at 0.73.
 
 **Why that might differ between human and AI writing:** Going for the most
 likely next word, on average, produces even, mid-length sentences and a
@@ -110,8 +116,8 @@ next to a forty-word one, a dash, a fragment.
 anything that changes the shape without changing the substance moves the
 score. Someone can take AI text and break up sentences, add typos, or paste
 in a quotation to make it look "human". A careful human writer with a tidy,
-even style can look "AI". Type-token ratio also falls as text gets longer, so
-length alone can move the score.
+even style can look "AI". My formal human sample (a lab report) scored 0.63
+on this signal, leaning AI, for exactly that reason.
 
 ### The combining rule
 
@@ -143,7 +149,15 @@ in `config.py`.
 |---|---|---|---|---|
 | clearly_ai | 0.75 | 0.84 | 0.80 | high-confidence AI |
 | clearly_human | 0.44 | 0.07 | 0.22 | high-confidence human |
-| borderline (lightly-edited AI) | 0.35 | 0.61 | 0.51 | unsure |
+| borderline (lightly-edited AI) | 0.35 | 0.61 | 0.50 | unsure |
+| formal_human (a real lab report) | 0.47 | 0.63 | 0.57 | unsure |
+
+The last two are the ones that matter. The lightly-edited AI lands in
+"unsure" rather than passing as human. The formal human writing isn't
+accused, but only because the model signal pulled it down: the style signal
+alone leaned AI, and the combined 0.57 is only 0.08 below the AI line. That
+gap is the false-positive risk my thresholds in Milestone 5 have to account
+for.
 
 **Where it lives:** `scoring.py::combine_signals`
 
@@ -158,7 +172,7 @@ model signal scored it **0.35**, which on its own would be high-confidence
 human: the new words were hard for gpt2 to predict. The style signal scored
 it **0.61**, leaning AI: the AI's even sentence rhythm survived the edits.
 
-My rule gives 0.4 × 0.35 + 0.6 × 0.61 = **0.51**, which lands in "unsure".
+My rule gives 0.4 × 0.35 + 0.6 × 0.61 = **0.50**, which lands in "unsure".
 That's the result I want. Neither signal is sure, they point in opposite
 directions, and it's lightly-edited AI, so calling it human would let it
 through and calling it AI would risk accusing someone who edits their own
