@@ -41,26 +41,32 @@
 
 1. **A writer sends the text.** A client POSTs JSON to `/submit` with `text`
    and `creator_id`. *Adds:* the raw material, plus who it belongs to.
-2. **The route checks the request** (`app.py::submit`). It rejects missing,
-   empty, non-string, too-short or too-long text with a 400 before any model
-   runs, and logs the rejection. *Adds:* a guarantee that everything after
+2. **The route checks the request** (`app.py::submit`). It rejects a missing
+   `creator_id`, or text that is missing, empty, under 10 words or over 20,000
+   characters, with a 400 before any model runs, and logs the rejection. *Adds:* a guarantee that everything after
    this step gets clean input, and a trace of anything refused.
 3. **The model signal reads it** (`detector.model_signal`). gpt2 measures how
    predictable the text is and squashes that onto 0–1. *Adds:* `model_score`,
    where higher means more likely AI.
 4. **The style signal measures it** (`stylometry.style_signal`). This looks
-   at the shape of the text: sentence-length spread, vocabulary repetition
-   and punctuation. *Adds:* `style_score` on the same 0–1 scale, also with
-   higher meaning more likely AI.
-5. **The two are combined** (`scoring.combine_signals`). *Adds:* one combined
-   score, the single number every later decision depends on.
+   at the shape of the text, without reading it: how much sentence length
+   varies and how much punctuation is used. *Adds:* `style_score` on the same
+   0–1 scale, also with higher meaning more likely AI.
+5. **The two are combined** (`scoring.combine_signals`): 0.4 × model_score +
+   0.6 × style_score. *Adds:* one combined score, the single number every
+   later decision depends on.
 6. **The score becomes words** (`scoring.score_to_label`, thresholds in
-   `config.py`). *Adds:* a `guess` (`human` / `unsure` / `ai`) and the label
-   sentence the reader actually sees.
+   `config.py`: human below 0.35, AI above 0.70, unsure in between). *Adds:*
+   a `guess` (`human` / `unsure` / `ai`) and the label sentence the reader
+   actually sees.
 7. **The decision is logged and returned** (`audit.log_decision`). The
    service gives it a `content_id`, writes all the scores and the label to
    the audit log, and sends it all back. *Adds:* a permanent record, plus the
    one handle the writer needs if they want to appeal.
+
+If the writer thinks the label is wrong, they send that `content_id` and their
+reasoning to `/appeal` (`app.py::appeal`). The appeal is logged next to the
+original decision, the item moves to `under_review`, and a person looks at it.
 
 
 ---
@@ -159,7 +165,8 @@ alone leaned AI, and the combined 0.57 was only 0.08 below the original AI
 line of 0.65. That gap is why I raised the AI line to 0.70 in Milestone 5
 (see Label Variants).
 
-**Where it lives:** `scoring.py::combine_signals`
+**Where it lives:** `scoring.py::combine_signals`, with the weights
+(`WEIGHT_MODEL_SIGNAL`, `WEIGHT_STYLE_SIGNAL`) in `config.py`.
 
 <!-- ⚠️ The grader checks your code against that line. If your rule lives
      somewhere else, say where. -->
