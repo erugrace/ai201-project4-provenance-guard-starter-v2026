@@ -148,3 +148,27 @@ Could someone build against this without asking me anything?
 - What happens with an unknown `content_id`? Answered: 404.
 - Still open: should one `creator_id` be able to appeal another creator's
   `content_id`? For now, yes. Revisit in unit 8.
+
+---
+
+## Milestone 3 — signal one on the three samples
+
+Run from the terminal with `python detector.py "<text>"` before wiring the
+signal into the route.
+
+| Sample | Perplexity | model_signal | Label from this signal alone (0.35 / 0.65) |
+|---|---|---|---|
+| clearly_ai | 22.3 | 0.7544 | high-confidence AI |
+| clearly_human | 51.7 | 0.4445 | unsure |
+| borderline | 66.5 | 0.3489 | high-confidence human (just under 0.35) |
+
+What this shows:
+- The direction is right: AI text is more predictable and scores highest.
+  The AI–human gap is about 0.31.
+- My clearly-human text only reaches "unsure". That's an early warning for
+  criterion 1 (8 of 10 human pieces labelled human).
+- The borderline text (lightly edited AI) scored *more human* than the
+  clearly-human text. A few unexpected words ("frazzled", "wreck focus") were
+  enough to raise its perplexity. This is the model signal's blind spot:
+  it measures word predictability, not authorship. It's a candidate for
+  Milestone 4's "case where my two signals split".

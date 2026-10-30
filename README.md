@@ -167,15 +167,29 @@ length alone can move the score.
      two off the response, so leaving them out costs you next unit's
      diagnostics. -->
 
+The text is `samples/clearly_ai.json`, read out of the file so the full
+paragraph doesn't need pasting into the command.
+
 ```bash
 $ curl -X POST http://127.0.0.1:5000/submit \
   -H "Content-Type: application/json" \
-  -d '{"text": "...", "creator_id": "..."}'
+  -d "$(python -c 'import json; t=json.load(open("samples/clearly_ai.json"))["text"]; print(json.dumps({"text": t, "creator_id": "derin"}))')"
 ```
 
 ```json
-
+{
+  "confidence": 0.5,
+  "content_id": "c_a3d699f87c4a",
+  "guess": "unsure",
+  "label": "not built yet",
+  "model_score": 0.7544,
+  "style_score": null
+}
 ```
+
+<!-- Unit 7, Milestone 3: model_score is real. confidence, guess and label are
+     placeholders, and style_score is null until Milestone 4. -->
+
 
 **An appeal**
 
@@ -196,8 +210,42 @@ $ curl "http://127.0.0.1:5000/log?limit=3"
 ```
 
 ```json
-
+{
+  "count": 3,
+  "entries": [
+    {
+      "creator_id": "u1",
+      "event": "rejected",
+      "reason": "text_too_long",
+      "status": "rejected",
+      "timestamp": "2026-10-30T03:13:05+00:00"
+    },
+    {
+      "creator_id": null,
+      "event": "rejected",
+      "reason": "missing_creator_id",
+      "status": "rejected",
+      "timestamp": "2026-10-30T03:13:05+00:00"
+    },
+    {
+      "combined_score": null,
+      "content_id": "c_a3d699f87c4a",
+      "creator_id": "derin",
+      "guess": "unsure",
+      "label": null,
+      "model_score": 0.7544,
+      "status": "decided",
+      "style_score": null,
+      "timestamp": "2026-10-30T03:18:18+00:00"
+    }
+  ]
+}
 ```
+
+<!-- The last entry is the submission above: same content_id, same
+     model_score. The two before it are bad-input tests (text over 20,000
+     characters, missing creator_id), rejected with a 400 and still logged. -->
+
 
 ---
 

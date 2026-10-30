@@ -203,36 +203,49 @@ def submit():
 
     payload = request.get_json(silent=True) or {}
 
+    # Step 2 - JSON goes in: pull text and creator_id out of the body
+    text = payload.get("text")
+    creator_id = payload.get("creator_id")
+
+    if not isinstance(text, str) or not text.strip():
+        audit.log_rejection(creator_id=creator_id, reason="missing_or_empty_text")
+        return jsonify({"error": "bad_request", "message": "Send JSON with a non-empty \"text\"."}), 400
+    if not isinstance(creator_id, str) or not creator_id.strip():
+        audit.log_rejection(creator_id=creator_id, reason="missing_creator_id")
+        return jsonify({"error": "bad_request", "message": "Send JSON with a non-empty \"creator_id\"."}), 400
+    if len(text.split()) < 10:
+        audit.log_rejection(creator_id=creator_id, reason="text_too_short")
+        return jsonify({"error": "text_too_short", "message": "Send at least 10 words — there isn't enough to judge."}), 400
+    if len(text) > 20000:
+        audit.log_rejection(creator_id=creator_id, reason="text_too_long")
+        return jsonify({"error": "text_too_long", "message": "Send at most 20,000 characters."}), 400
+
     # Step 3 - one real signal that we first tested from the terminal
     # python detector.py "some text"
-    
-    model_score = detector.model_signal(text)
-
-    
-
-    # Step 2 - JSON goes in: pull text and creator_id out of the body
-    if not isinstance(text, str) or not text.strip():
-        return jsonify({"error": "bad_request", "message": "Send JSON with a non-empty \"text\"."}), 400
+    try:
+        model_score = detector.model_signal(text)
+    except detector.DetectorUnavailable as exc:
+        return jsonify({"error": "detector_unavailable", "message": str(exc)}), 503
 
     # Step 4 - log the decision. The content_id is what /appeal needs later.
+    # guess, confidence and label are placeholders until Milestones 4 and 5.
     content_id = f"c_{uuid.uuid4().hex[:12]}"
     audit.log_decision(
         content_id=content_id,
         creator_id=creator_id,
+        guess="unsure",
         model_score=model_score,
         status="decided",
     )
-    #Step 1 
-    # TODO: delete this and build the route.
+
     return jsonify({
-        "content_id": "hardcoded",
-        "guess" : "unsure",
+        "content_id": content_id,
+        "guess": "unsure",
         "confidence": 0.5,
         "label": "not built yet",
-        "model_score": None,
-        "style_score": None
-    }),200
-    
+        "model_score": model_score,
+        "style_score": None,
+    }), 200
 
 
 @app.post("/appeal")
