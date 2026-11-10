@@ -370,25 +370,37 @@ $ curl "http://127.0.0.1:5000/log?limit=3"
 
 ## Rate Limiting
 
-**My limits:** ___ per minute, ___ per day
+**My limits:** 10 per minute, 300 per day
 
 **Why those numbers and not others:**
-<!-- Think about two people: a real writer submitting their own work a few
-     times an hour, and a script sending a thousand variations to map your
-     thresholds. Your numbers have to be liveable for the first and hostile to
-     the second. -->
+A real writer submits their own work a few times an hour, and even someone
+revising and resubmitting a draft rarely sends more than a handful in a
+minute. 10 per minute leaves them plenty of room. A script trying to map my
+thresholds needs hundreds or thousands of variations; at 10 a minute and 300
+a day it would take days, and every attempt lands in the log. 300 a day is
+far more than any honest writer needs, but it stops a script from running
+all day.
 
-**What a caller counts as:** <!-- per address, or per creator_id? They fail
-differently — one script can look like a thousand callers, and one household
-can look like one. -->
+**What a caller counts as:** Per `creator_id`, falling back to the IP address
+when there isn't one. That's fair to people sharing a network (a school or
+a household all look like one address), but a script can dodge it by
+sending a different `creator_id` with every request, so one script can
+look like a thousand callers.
 
 **The run of status codes when I pushed past it:**
 
-<!-- python run_attacks.py --flood 15 -->
-
+```bash
+$ python run_attacks.py --flood 15
 ```
 
 ```
+200 200 200 200 200 200 200 200 200 200 429 429 429 429 429
+```
+
+The first 10 requests in the minute got through. Requests 11 to 15 got a 429,
+and each one was logged as a rejection (`"reason": "rate_limited"`), so the
+flood shows up in the audit log instead of disappearing. Full report:
+`results/flood_2026-11-09_2201.md`.
 
 ---
 
