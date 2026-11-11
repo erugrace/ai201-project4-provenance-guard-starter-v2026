@@ -123,6 +123,10 @@ def punctuation_density(text: str) -> float:
 
 # ── Combining them ───────────────────────────────────────────────────────────
 
+# Below this many sentences, style_signal has nothing reliable to measure.
+MIN_SENTENCES = 4
+
+
 def style_signal(text: str) -> float:
     """
     The style signal as a 0–1 score. **Higher means more likely AI.** ← TODO
@@ -151,6 +155,13 @@ def style_signal(text: str) -> float:
     #
     # The ranges come from my three samples: even AI prose sits at the low end
     # of each one, chatty human writing at the high end.
+    #
+    # Unit 8 improvement: under 4 sentences there's too little text to read a
+    # style from. Spread from 2-3 sentences is mostly chance, and a short
+    # paragraph with no commas clipped to "certainly AI". It now returns 0.5
+    # (no evidence either way) and leaves the decision to signal one.
+    if len(sentences(text)) < MIN_SENTENCES:
+        return 0.5
     if len(sentences(text)) < 2:
         spread_ai = 0.5      # one sentence: no evidence either way
     else:

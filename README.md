@@ -561,7 +561,13 @@ All three trials returned identical scores. gpt2 is deterministic on my
 machine, so the same text gets the same score every time. The repeats show
 the results are stable, not that they're right.
 
-Criterion 4 passed only because of the sample texts. The "clearly human" half
+Criterion 2's wording in `criteria.md` still gives the unsure band as
+0.35–0.65, written before I moved the AI line to 0.70 in unit 7. All five
+borderline scores (0.42, 0.48, 0.50, 0.57, 0.59) fall inside the stricter
+0.35–0.65 band anyway, so the verdict is MET either way.
+
+Criterion 4 is the one I'd tighten. It passed by only 0.025 (a gap of 0.325
+against a target of 0.30), and only because of the sample texts. The "clearly human" half
 was `samples/clearly_human.json` (0.22) and one of my own paragraphs (0.79).
 My own writing alone would have scored almost as high as the AI text.
 
@@ -928,22 +934,250 @@ against exactly this (`if not isinstance(payload, dict)`); the route doesn't.
 
 ## The Improvement
 
-**What I changed:**
+**What I changed:** One change, in signal two (`stylometry.py::style_signal`).
+Any text under 4 sentences (`MIN_SENTENCES = 4`) now gets a style score of
+0.5, meaning "no evidence either way", instead of being measured. With only
+2 or 3 sentences, sentence-length spread is mostly chance, and a short
+paragraph with no commas clipped to 1.00, "certainly AI". Now the decision on
+short text is left to signal one. Nothing else changed: same weights
+(0.4 / 0.6), same thresholds (0.35 / 0.70), same route.
 
-**Which diagnosis pointed at it:**
+Before choosing it, I simulated three options on my recorded scores
+(reweighting to 0.7 / 0.3, reweighting to 0.6 / 0.4, and this one). This was
+the only one that stopped my own writing being called AI at all, and it
+targets the exact mechanism my diagnosis named.
+
+**Which diagnosis pointed at it:** Diagnosis 1 (real writing called AI). My
+own paragraphs are 1–3 sentences long, and signal two scored four of them at
+1.00 because it had nothing to measure.
 
 ### Attack Run — After
 
 <!-- Same format. `run_attacks.py --label after` -->
 
+Produced by `run_attacks.py --set attack_set --label after` on 2026-11-11,
+with the same marking rules as before. Full report:
+`results/attack_run_2026-11-11_0127_after.md`. (I ran it twice by mistake;
+the 01:26 run gave identical results.)
 
+**Totals: 47 HELD, 9 BROKE** (before: 46 held, 10 broke).
+
+| Family | Before: held / broke | After: held / broke |
+|---|---|---|
+| evasion | 10 / 0 | 10 / 0 |
+| false_positive | 1 / 7 | 1 / 7 |
+| prompt_injection | 5 / 1 | 5 / 1 |
+| malformed | 18 / 2 | **19 / 1** |
+| flood_same_creator | 12 / 0 | 12 / 0 |
+
+Only four attacks changed score, all of them short texts:
+
+| ID | Targeting | Before | After | Style before → after |
+|---|---|---|---|---|
+| MF07 | right-to-left script | ai 0.81 (BROKE) | **unsure 0.66 (HELD)** | 0.75 → 0.50 |
+| EV07 | padding with punctuation | unsure 0.38 | unsure 0.53 | 0.25 → 0.50 |
+| EV08 | text below the token window | unsure 0.70 | unsure **0.40** | 1.00 → 0.50 |
+| PI05 | inject into the audit log | unsure 0.48 | unsure 0.56 | 0.38 → 0.50 |
+
+| ID | Family | Targeting | Status | Content ID | Guess | Score | Verdict |
+|---|---|---|---|---|---|---|---|
+| EV01 | evasion | signal two: typos raise word variety | 200 | `c_f8ba96f3e34e` | unsure | 0.642 | HELD |
+| EV02 | evasion | signal two: broken-up sentences raise length spread | 200 | `c_26c4d6c26e09` | unsure | 0.589 | HELD |
+| EV03 | evasion | signal two: a pasted quotation changes the shape | 200 | `c_e5bb7b0e6217` | ai | 0.718 | HELD |
+| EV04 | evasion | signal one: unusual words raise perplexity | 200 | `c_2580b4742874` | ai | 0.784 | HELD |
+| EV05 | evasion | both signals: heavy human editing pass | 200 | `c_6ae29bd1cb08` | unsure | 0.416 | HELD |
+| EV06 | evasion | signal two: one very long sentence and one very short | 200 | `c_8b50dfa0e46a` | unsure | 0.529 | HELD |
+| EV07 | evasion | signal two: padding with punctuation | 200 | `c_0695c1d82bff` | unsure | 0.534 | HELD |
+| EV08 | evasion | signal one: text below the token window | 200 | `c_7aa1103a1557` | unsure | 0.398 | HELD |
+| EV09 | evasion | both: AI text with a human opening paragraph bolted on | 200 | `c_78fa757776dc` | ai | 0.763 | HELD |
+| EV10 | evasion | signal two: repeated stanza structure | 200 | `c_6d5865b484cd` | ai | 0.951 | HELD |
+| FP01 | false_positive | plain, clear human writing with no flourishes | 200 | `c_ed8fa817710f` | ai | 0.779 | BROKE |
+| FP02 | false_positive | human writing in a formal register | 200 | `c_669032e09a32` | ai | 0.895 | BROKE |
+| FP03 | false_positive | a non-native English speaker writing carefully | 200 | `c_5945856f5cd1` | ai | 0.910 | BROKE |
+| FP04 | false_positive | a student essay written to a rubric | 200 | `c_936fb77d3728` | ai | 0.905 | BROKE |
+| FP05 | false_positive | technical documentation written by a person | 200 | `c_15c16b331bd1` | ai | 0.920 | BROKE |
+| FP06 | false_positive | a person imitating a formal template | 200 | `c_d4c54c047b70` | ai | 0.859 | BROKE |
+| FP07 | false_positive | human writing that repeats a phrase deliberately | 200 | `c_c91697a5288c` | ai | 0.768 | BROKE |
+| FP08 | false_positive | very short genuine human submission | 400 | `—` | — | — | HELD |
+| PI01 | prompt_injection | instruction to ignore the check | 200 | `c_d7c4493e5c5b` | unsure | 0.629 | HELD |
+| PI02 | prompt_injection | instruction disguised as a system message | 200 | `c_0b4d63f4a7d0` | unsure | 0.516 | HELD |
+| PI03 | prompt_injection | instruction wrapped in the writer's voice | 200 | `c_f07c93ad2106` | ai | 0.771 | HELD |
+| PI04 | prompt_injection | attempt to make the label text hostile | 200 | `c_34c2754b5ef7` | unsure | 0.630 | HELD |
+| PI05 | prompt_injection | attempt to inject into the audit log | 200 | `c_a8f2bd036b13` | unsure | 0.556 | HELD |
+| PI06 | prompt_injection | instruction plus real human text | 200 | `c_cfce07703049` | ai | 0.761 | BROKE |
+| MF01 | malformed | text is only whitespace | 400 | `—` | — | — | HELD |
+| MF02 | malformed | text is a single character | 400 | `—` | — | — | HELD |
+| MF03 | malformed | text is control characters | 400 | `—` | — | — | HELD |
+| MF04 | malformed | text is only punctuation | 400 | `—` | — | — | HELD |
+| MF05 | malformed | text is a very long single word | 400 | `—` | — | — | HELD |
+| MF06 | malformed | text is emoji only | 400 | `—` | — | — | HELD |
+| MF07 | malformed | text is right-to-left script | 200 | `c_2e8d6b68fb29` | unsure | 0.663 | HELD |
+| MF08 | malformed | text is 60,000 characters | 400 | `—` | — | — | HELD |
+| RQ01 | malformed | no text field at all | 400 | `—` | — | — | HELD |
+| RQ02 | malformed | no creator_id | 400 | `—` | — | — | HELD |
+| RQ03 | malformed | text is a number | 400 | `—` | — | — | HELD |
+| RQ04 | malformed | text is a list | 400 | `—` | — | — | HELD |
+| RQ05 | malformed | text is null | 400 | `—` | — | — | HELD |
+| RQ06 | malformed | creator_id is an object | 400 | `—` | — | — | HELD |
+| RQ07 | malformed | body is a JSON array, not an object | 500 | `—` | — | — | BROKE |
+| RQ08 | malformed | body is unparseable JSON | 400 | `—` | — | — | HELD |
+| RQ09 | malformed | body is empty | 400 | `—` | — | — | HELD |
+| RQ10 | malformed | body is form-encoded, not JSON | 400 | `—` | — | — | HELD |
+| RQ11 | malformed | body is JSON claiming to be plain text | 400 | `—` | — | — | HELD |
+| RQ12 | malformed | deeply nested JSON | 400 | `—` | — | — | HELD |
+| FL01_01 | flood_same_creator | 20 rapid submissions from one creator | 400 | `—` | — | — | HELD |
+| FL01_02 | flood_same_creator | 20 rapid submissions from one creator | 400 | `—` | — | — | HELD |
+| FL01_03 | flood_same_creator | 20 rapid submissions from one creator | 400 | `—` | — | — | HELD |
+| FL01_04 | flood_same_creator | 20 rapid submissions from one creator | 400 | `—` | — | — | HELD |
+| FL01_05 | flood_same_creator | 20 rapid submissions from one creator | 400 | `—` | — | — | HELD |
+| FL01_06 | flood_same_creator | 20 rapid submissions from one creator | 400 | `—` | — | — | HELD |
+| FL01_07 | flood_same_creator | 20 rapid submissions from one creator | 400 | `—` | — | — | HELD |
+| FL01_08 | flood_same_creator | 20 rapid submissions from one creator | 400 | `—` | — | — | HELD |
+| FL01_09 | flood_same_creator | 20 rapid submissions from one creator | 400 | `—` | — | — | HELD |
+| FL01_10 | flood_same_creator | 20 rapid submissions from one creator | 400 | `—` | — | — | HELD |
+| FL01_11 | flood_same_creator | 20 rapid submissions from one creator | 429 | `—` | — | — | HELD |
+| FL01_12 | flood_same_creator | 20 rapid submissions from one creator | 429 | `—` | — | — | HELD |
+
+**My five criteria — after**
+
+Produced by `run_eval.py --label after`, same `scenarios.py`, three trials.
+Full output: `results/run_2026-11-11_0127_after.md`.
+
+| Criterion | Target | Before (each run) | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|---|
+| 1. Human writing is recognised as human | ≥ 8 of 10 labelled human | 0 of 10 (5 ai, 5 unsure) | 1 of 10 (0 ai, 9 unsure) | 1 of 10 (0 ai, 9 unsure) | 1 of 10 (0 ai, 9 unsure) | **MISSED** |
+| 2. Borderline in "unsure", every label reachable | ≥ 4 of 5 unsure; all 3 labels | 5 of 5; all 3 | 5 of 5; all 3 | 5 of 5; all 3 | 5 of 5; all 3 | MET |
+| 3. Bad input refused cleanly | 5 of 5 get 400, none 500, all logged | 5 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 4. AI and human score far apart | average gap ≥ 0.30 | 0.33 | 0.43 | 0.43 | 0.43 | MET |
+| 5. Labels never accuse | no accusing words; appeal mentioned | met | met | met | met | MET |
+
+Real output, criterion 1 trial 1 after the change (`run_eval.py::main`):
+
+```json
+[
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.5797,
+    "model_score": 0.6993,
+    "style_score": 0.5,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Kenny is a boy that loves to eat. He eats various foods on a daily bas"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.4803,
+    "model_score": 0.4507,
+    "style_score": 0.5,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Don't go to school without washing your clothes. Your presentation det"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.3818,
+    "model_score": 0.2045,
+    "style_score": 0.5,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Tade has been topping her class since grade 1. Every tests, exams, and"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.548,
+    "model_score": 0.6199,
+    "style_score": 0.5,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Whenever you see a bee, it's best to stay on right track so you don't "
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.532,
+    "model_score": 0.58,
+    "style_score": 0.5,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Don't play with fire. Keep your hands to yourself when around flammabl"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.6033,
+    "model_score": 0.7583,
+    "style_score": 0.5,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "There are three rooms in this household. Some of them are painted red,"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.3966,
+    "model_score": 0.2416,
+    "style_score": 0.5,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Music is such a therapeutic tool. It gives so much life on gloomy days"
+  },
+  {
+    "status": 200,
+    "guess": "human",
+    "confidence": 0.3329,
+    "model_score": 0.0823,
+    "style_score": 0.5,
+    "label": "This reads like it was written by a person.",
+    "sent": "Energy drinks despite how good they appear to bve aren't really the be"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.3573,
+    "model_score": 0.1433,
+    "style_score": 0.5,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Gentle parenting in 2026 is really not the way to train kids. Some hav"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.5645,
+    "model_score": 0.6613,
+    "style_score": 0.5,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "When the sun rises and sets, it's said to have gotten tired of seeing "
+  }
+]
+```
 
 **Did it help, and how do I know:**
 
 <!-- Widening the unsure band usually fixes one problem and creates another.
      Reporting that trade honestly is worth full credit. -->
 
+Partly. It fixed what it was aimed at, and nothing else.
 
+- **What it fixed.** My service no longer calls me AI on any of my own
+  paragraphs: 5 of 10 labelled AI before, 0 of 10 after. Paragraph 8, which
+  signal one already thought was human (0.08), is now labelled human. The
+  gap in criterion 4 widened from 0.33 to 0.43, because my own paragraph in
+  the "human" half fell from 0.79 to 0.58. MF07 also stopped being a
+  confident wrong verdict, as a side effect.
+- **What it didn't fix.** Criterion 1 is still MISSED: 1 of 10 labelled human
+  against a target of 8. Nine of my paragraphs moved from AI to "unsure",
+  which is better than an accusation but isn't recognition. The attack set's
+  false-positive family didn't move at all (still 7 of 8 BROKE). Those texts
+  are 6–8 sentences long, so the change never applies to them. Their
+  problem is diagnosis 1's second half: both signals read plain, careful
+  writing as AI. RQ07 still crashes, because I didn't touch the route.
+- **What it cost.** Short text is now judged by signal one alone. EV08 (AI
+  text kept below the model's token window) dropped from 0.70, just under
+  the AI line, to 0.40, just above the human line. It still holds, but a
+  slightly shorter or more unusual AI text would now pass as human. An
+  attacker who learns the rule can keep AI text to three sentences and take
+  signal two out of the decision.
+
+I know this from the before/after runs, not from guessing: same inputs,
+same weights and thresholds, one change, and the only scores that moved were
+on texts under 4 sentences.
 
 ---
 
