@@ -545,19 +545,125 @@ standing between them and a wrong accusation is the appeal path.
 
 <!-- Your five criteria across three trials. `run_eval.py --label before`. -->
 
+Produced by `run_eval.py --label before` on 2026-11-11, before any fixes.
+Inputs are in `scenarios.py`; full output is in
+`results/run_2026-11-11_0042_before.md`.
+
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. Human writing is recognised as human | ≥ 8 of 10 of my own paragraphs labelled human | 0 of 10 (5 ai, 5 unsure) | 0 of 10 (5 ai, 5 unsure) | 0 of 10 (5 ai, 5 unsure) | **MISS** |
+| 2. Borderline lands in "unsure", every label reachable | ≥ 4 of 5 borderline texts unsure; all 3 labels seen | 5 of 5 unsure; ai, unsure, human all seen | 5 of 5; all 3 seen | 5 of 5; all 3 seen | MET |
+| 3. Bad input refused cleanly | 5 of 5 malformed requests get a 400, none a 500, each logged | 5 of 5 → 400, all logged | 5 of 5 → 400, all logged | 5 of 5 → 400, all logged | MET |
+| 4. Clearly-AI and clearly-human score far apart | average gap ≥ 0.30 | 0.83 vs 0.51 = 0.33 | 0.33 | 0.33 | MET (narrowly) |
+| 5. Labels describe the text, never accuse | no "used AI" / "cheated" / "plagiarised"; AI and unsure labels say how to appeal | every label returned passes | passes | passes | MET |
+
+All three trials returned identical scores. gpt2 is deterministic on my
+machine, so the same text gets the same score every time. The repeats show
+the results are stable, not that they're right.
+
+Criterion 4 passed only because of the sample texts. The "clearly human" half
+was `samples/clearly_human.json` (0.22) and one of my own paragraphs (0.79).
+My own writing alone would have scored almost as high as the AI text.
 
 **Real output from one trial**, pasted as text, naming the file and function
 that produced it:
 
-```json
+Trial 1 of criterion 1 ("my own writing"), from `run_eval.py::main`, as
+written to `results/run_2026-11-11_0042_before.md`:
 
+```json
+[
+  {
+    "status": 200,
+    "guess": "ai",
+    "confidence": 0.7901,
+    "model_score": 0.6993,
+    "style_score": 0.8506,
+    "label": "Parts of this text look a lot like AI-generated writing. This is an automated estimate and it can be wrong. If you wrote it yourself, you can appeal and a person will review it.",
+    "sent": "Kenny is a boy that loves to eat. He eats various foods on a daily bas"
+  },
+  {
+    "status": 200,
+    "guess": "ai",
+    "confidence": 0.7803,
+    "model_score": 0.4507,
+    "style_score": 1.0,
+    "label": "Parts of this text look a lot like AI-generated writing. This is an automated estimate and it can be wrong. If you wrote it yourself, you can appeal and a person will review it.",
+    "sent": "Don't go to school without washing your clothes. Your presentation det"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.5121,
+    "model_score": 0.2045,
+    "style_score": 0.7172,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Tade has been topping her class since grade 1. Every tests, exams, and"
+  },
+  {
+    "status": 200,
+    "guess": "ai",
+    "confidence": 0.7745,
+    "model_score": 0.6199,
+    "style_score": 0.8776,
+    "label": "Parts of this text look a lot like AI-generated writing. This is an automated estimate and it can be wrong. If you wrote it yourself, you can appeal and a person will review it.",
+    "sent": "Whenever you see a bee, it's best to stay on right track so you don't "
+  },
+  {
+    "status": 200,
+    "guess": "ai",
+    "confidence": 0.7275,
+    "model_score": 0.58,
+    "style_score": 0.8258,
+    "label": "Parts of this text look a lot like AI-generated writing. This is an automated estimate and it can be wrong. If you wrote it yourself, you can appeal and a person will review it.",
+    "sent": "Don't play with fire. Keep your hands to yourself when around flammabl"
+  },
+  {
+    "status": 200,
+    "guess": "ai",
+    "confidence": 0.8917,
+    "model_score": 0.7583,
+    "style_score": 0.9806,
+    "label": "Parts of this text look a lot like AI-generated writing. This is an automated estimate and it can be wrong. If you wrote it yourself, you can appeal and a person will review it.",
+    "sent": "There are three rooms in this household. Some of them are painted red,"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.6966,
+    "model_score": 0.2416,
+    "style_score": 1.0,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Music is such a therapeutic tool. It gives so much life on gloomy days"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.6329,
+    "model_score": 0.0823,
+    "style_score": 1.0,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Energy drinks despite how good they appear to bve aren't really the be"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.6573,
+    "model_score": 0.1433,
+    "style_score": 1.0,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Gentle parenting in 2026 is really not the way to train kids. Some hav"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.6395,
+    "model_score": 0.6613,
+    "style_score": 0.625,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "When the sun rises and sets, it's said to have gotten tired of seeing "
+  }
+]
 ```
 
 **Diagnoses**
@@ -576,7 +682,56 @@ that produced it:
 
      Look for a pattern. Five failures on one signal is one problem, not five. -->
 
+**1. Real writing called AI: criterion 1, FP01–FP07 and PI06 (one problem,
+not nine).**
+*Stage: signal two, made worse by the combining rule.*
 
+My own paragraphs are short, only 1 to 3 sentences each, and five of the ten
+have no commas, dashes or other marks at all. Signal two has almost nothing
+to measure on text like that:
+- *Punctuation density* was 0.000 on five paragraphs. That's below the 0.04
+  floor I set from my three samples, so the measure clips to "certainly AI".
+- *Sentence-length spread* from 2 or 3 sentences is mostly chance. Two
+  sentences of similar length gives a spread near 0 (0.06 and 0.08 on
+  paragraphs 9 and 2), which also clips to "certainly AI".
+
+So the style signal hit **1.00 on four of my ten paragraphs** and was above
+0.7 on nine. My combining rule gives style 0.6 of the weight, so it
+overrode signal one even when signal one was confident I'm human: on
+paragraph 8 the model signal said 0.08, style said 1.00, and the combined
+0.63 landed in unsure.
+
+On paragraphs 1, 4, 5 and 6 and the attack set's false-positive family, it's
+worse: *both* signals scored high. Plain, careful writing is predictable to
+gpt2 (signal one's blind spot) *and* even and lightly punctuated (signal
+two's). FP02, FP03 and FP05 scored 0.98–1.00 on style and 0.74–0.81 on the
+model signal. This is the writer I traced in Milestone 1, and both blind
+spots point at them at once. PI06 is the same failure: the injected
+instruction did nothing, but the real human text around it was scored like
+FP01.
+
+**2. MF07, right-to-left script labelled AI at 0.81.**
+*Stage: the route, then signal one.*
+
+The route checks that text exists and is the right length, not that it's in
+a language the service can read. gpt2 was trained on English. It splits
+Arabic or Hebrew script into many small byte-level pieces that follow each
+other predictably, so perplexity comes out low and signal one reports 0.91,
+confidently "AI". Signal two can't help either: my sentence splitter only
+knows `. ! ?`, so the whole text counts as one sentence and spread defaults
+to neutral, while the punctuation it doesn't recognise counts as none. The
+service gave a confident verdict on text it can't read, about a writer it
+would wrongly accuse.
+
+**3. RQ07, a JSON array as the body, crashed with a 500.**
+*Stage: the route.*
+
+`app.py::submit` starts with `payload = request.get_json(silent=True) or {}`.
+A JSON array is valid JSON and a non-empty list is truthy, so `payload`
+becomes a list, and the next line, `payload.get("text")`, raises
+`AttributeError`. The crash happens before any `audit` call, so it left **no
+entry in the audit log**. The rate limiter's key function already guards
+against exactly this (`if not isinstance(payload, dict)`); the route doesn't.
 
 ---
 
