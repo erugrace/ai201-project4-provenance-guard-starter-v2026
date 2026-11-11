@@ -551,7 +551,7 @@ Inputs are in `scenarios.py`; full output is in
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Human writing is recognised as human | ≥ 8 of 10 of my own paragraphs labelled human | 0 of 10 (5 ai, 5 unsure) | 0 of 10 (5 ai, 5 unsure) | 0 of 10 (5 ai, 5 unsure) | **MISS** |
+| 1. Human writing is recognised as human | ≥ 8 of 10 of my own paragraphs labelled human | 0 of 10 (5 ai, 5 unsure) | 0 of 10 (5 ai, 5 unsure) | 0 of 10 (5 ai, 5 unsure) | **MISSED** |
 | 2. Borderline lands in "unsure", every label reachable | ≥ 4 of 5 borderline texts unsure; all 3 labels seen | 5 of 5 unsure; ai, unsure, human all seen | 5 of 5; all 3 seen | 5 of 5; all 3 seen | MET |
 | 3. Bad input refused cleanly | 5 of 5 malformed requests get a 400, none a 500, each logged | 5 of 5 → 400, all logged | 5 of 5 → 400, all logged | 5 of 5 → 400, all logged | MET |
 | 4. Clearly-AI and clearly-human score far apart | average gap ≥ 0.30 | 0.83 vs 0.51 = 0.33 | 0.33 | 0.33 | MET (narrowly) |
@@ -568,8 +568,10 @@ My own writing alone would have scored almost as high as the AI text.
 **Real output from one trial**, pasted as text, naming the file and function
 that produced it:
 
-Trial 1 of criterion 1 ("my own writing"), from `run_eval.py::main`, as
-written to `results/run_2026-11-11_0042_before.md`:
+All of it is trial 1, produced by `run_eval.py::main` (which posts each input
+to `app.py::submit`) and written to `results/run_2026-11-11_0042_before.md`.
+
+*Criterion 1 — my own writing (0 of 10 labelled human):*
 
 ```json
 [
@@ -662,6 +664,195 @@ written to `results/run_2026-11-11_0042_before.md`:
     "style_score": 0.625,
     "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
     "sent": "When the sun rises and sets, it's said to have gotten tired of seeing "
+  }
+]
+```
+
+*Criterion 2 — borderline and label coverage (texts 1–5 are borderline, all
+unsure; text 6 reaches ai, text 7 reaches human):*
+
+```json
+[
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.5035,
+    "model_score": 0.3489,
+    "style_score": 0.6066,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Time management matters more than people admit, especially now that wo"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.5675,
+    "model_score": 0.468,
+    "style_score": 0.6339,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Compared to a literature correlation, our orifice coefficients are 3 t"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.4223,
+    "model_score": 0.2827,
+    "style_score": 0.5153,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Remote work has changed how teams communicate, and not always for the "
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.475,
+    "model_score": 0.3687,
+    "style_score": 0.5458,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Learning a new language as an adult is slower than people expect, but "
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.5926,
+    "model_score": 0.4865,
+    "style_score": 0.6634,
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it.",
+    "sent": "Recycling only works when the material actually gets recycled. A lot o"
+  },
+  {
+    "status": 200,
+    "guess": "ai",
+    "confidence": 0.8056,
+    "model_score": 0.7544,
+    "style_score": 0.8398,
+    "label": "Parts of this text look a lot like AI-generated writing. This is an automated estimate and it can be wrong. If you wrote it yourself, you can appeal and a person will review it.",
+    "sent": "The importance of effective time management cannot be overstated in to"
+  },
+  {
+    "status": 200,
+    "guess": "human",
+    "confidence": 0.2211,
+    "model_score": 0.4445,
+    "style_score": 0.0722,
+    "label": "This reads like it was written by a person.",
+    "sent": "I didn't sleep. Not properly, anyway \u2014 I lay there listening to the bo"
+  }
+]
+```
+
+*Criterion 3 — bad input (5 of 5 got a 400; the matching `rejected` entries
+are in `logs/audit.jsonl`):*
+
+```json
+[
+  {
+    "status": 400,
+    "guess": null,
+    "confidence": null,
+    "model_score": null,
+    "style_score": null,
+    "label": null,
+    "sent": "{\"creator_id\": \"eval_bad_missing\"}"
+  },
+  {
+    "status": 400,
+    "guess": null,
+    "confidence": null,
+    "model_score": null,
+    "style_score": null,
+    "label": null,
+    "sent": "(empty text)"
+  },
+  {
+    "status": 400,
+    "guess": null,
+    "confidence": null,
+    "model_score": null,
+    "style_score": null,
+    "label": null,
+    "sent": "     "
+  },
+  {
+    "status": 400,
+    "guess": null,
+    "confidence": null,
+    "model_score": null,
+    "style_score": null,
+    "label": null,
+    "sent": "only five words right here"
+  },
+  {
+    "status": 400,
+    "guess": null,
+    "confidence": null,
+    "model_score": null,
+    "style_score": null,
+    "label": null,
+    "sent": "word word word word word word word word word word word word word word "
+  }
+]
+```
+
+*Criterion 4 — score spread (texts 1–2 clearly AI, average 0.83; texts 3–4
+human, average 0.51; gap 0.33):*
+
+```json
+[
+  {
+    "status": 200,
+    "guess": "ai",
+    "confidence": 0.8056,
+    "model_score": 0.7544,
+    "style_score": 0.8398,
+    "label": "Parts of this text look a lot like AI-generated writing. This is an automated estimate and it can be wrong. If you wrote it yourself, you can appeal and a person will review it.",
+    "sent": "The importance of effective time management cannot be overstated in to"
+  },
+  {
+    "status": 200,
+    "guess": "ai",
+    "confidence": 0.8561,
+    "model_score": 0.8411,
+    "style_score": 0.8661,
+    "label": "Parts of this text look a lot like AI-generated writing. This is an automated estimate and it can be wrong. If you wrote it yourself, you can appeal and a person will review it.",
+    "sent": "Effective communication is a fundamental component of successful teamw"
+  },
+  {
+    "status": 200,
+    "guess": "human",
+    "confidence": 0.2211,
+    "model_score": 0.4445,
+    "style_score": 0.0722,
+    "label": "This reads like it was written by a person.",
+    "sent": "I didn't sleep. Not properly, anyway \u2014 I lay there listening to the bo"
+  },
+  {
+    "status": 200,
+    "guess": "ai",
+    "confidence": 0.7901,
+    "model_score": 0.6993,
+    "style_score": 0.8506,
+    "label": "Parts of this text look a lot like AI-generated writing. This is an automated estimate and it can be wrong. If you wrote it yourself, you can appeal and a person will review it.",
+    "sent": "Kenny is a boy that loves to eat. He eats various foods on a daily bas"
+  }
+]
+```
+
+*Criterion 5 — the three labels as returned in criterion 2's trial 1. None
+says "used AI", "cheated" or "plagiarised"; all describe the text; the ai and
+unsure labels both say how to get a person to review it:*
+
+```json
+[
+  {
+    "guess": "unsure",
+    "label": "We can't tell whether this was written by a person or with AI help. That's common, and it isn't an accusation. If you wrote it, you can add a note explaining how, and a person will review it."
+  },
+  {
+    "guess": "ai",
+    "label": "Parts of this text look a lot like AI-generated writing. This is an automated estimate and it can be wrong. If you wrote it yourself, you can appeal and a person will review it."
+  },
+  {
+    "guess": "human",
+    "label": "This reads like it was written by a person."
   }
 ]
 ```
