@@ -323,18 +323,6 @@ $ curl "http://127.0.0.1:5000/log?limit=3"
 
 **Moment 1**
 
-- *What I asked for:* A review on my criteria
-- *What came back:* 
-- *What I changed:*
-
-**Moment 2**
-
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
-
-**Moment 1**
-
 - *What I asked for:* I had drafted five acceptance criteria for `criteria.md`
   and asked Claude to check whether they made sense and add a reason under
   each, before anything went into the file.
@@ -362,6 +350,34 @@ $ curl "http://127.0.0.1:5000/log?limit=3"
   added risk. When my formal human sample then scored 0.57, close to the AI
   line, I raised `AI_THRESHOLD` from 0.65 to 0.70 to give formal writers more
   room.
+
+**Moment 3 (unit 8)**
+
+- *What I asked for:* After the attack set and my criteria showed real
+  writing being called AI, I asked Claude which single change to make.
+- *What came back:* A simulation of three one-change options on my recorded
+  scores, without re-running anything: reweighting to 0.7/0.3, reweighting to
+  0.6/0.4, or making the style signal neutral on texts under 4 sentences. It
+  showed what each would do to my own writing, the false-positive family and
+  the evasion attacks, and recommended the short-text change because it
+  targeted the exact mechanism in my diagnosis.
+- *What I changed:* I chose the short-text change over reweighting, knowing
+  from the simulation that it would not help the long false-positive texts.
+  That's why my "Did it help" section says it fixed one thing and not the
+  other, instead of claiming a general improvement.
+
+**Moment 4 (unit 8)**
+
+- *What I asked for:* A check of my verdicts before calling criteria met or
+  missed.
+- *What came back:* Claude argued that criterion 5 should be MISSED on a
+  strict reading, because my labels say an appeal is *possible* but not *how*
+  to make one. It also warned that rewording the criterion to "you can appeal"
+  after seeing the result would count as lowering the target.
+- *What I changed:* I kept criterion 5 exactly as written and kept my verdict
+  of MET, and I did not revise the criterion. I did take its other two
+  suggestions: a note that criterion 2's wording predates my 0.70 threshold,
+  and naming criterion 4 as the one I'd tighten.
 
 
 <!-- ═══════════════════════ UNIT 8 — THE TEST ═══════════════════════ -->
@@ -1186,13 +1202,54 @@ on texts under 4 sentences.
 <!-- For each attack still getting through and each criterion still missed:
      what you'd do, and why you stopped. -->
 
+**Criterion 1 (my own writing labelled human): still MISSED, 1 of 10.**
+My improvement moved nine paragraphs from AI to unsure, but not to human.
+Signal one still scores plain, everyday sentences as predictable (0.45–0.76
+on several of mine), and the human label needs a combined score under 0.35.
+*What I'd do:* collect a larger set of real human writing, including mine
+and plain writing from other people, and recalibrate signal one's midpoint
+(currently perplexity 45) against it instead of against three samples.
+*Why I stopped:* recalibrating on ten of my own paragraphs and then testing
+on the same ten would just fit the test. It needs fresh writing I don't
+have yet, and the milestone asked for one change.
 
+**FP01–FP07 and PI06 (real writing labelled AI): still BROKE, 8 attacks.**
+These are 6–8 sentences, so my short-text change never applies. Both signals
+read plain, careful writing as AI: FP03, the non-native speaker, is still at
+0.91. *What I'd do:* stop letting the two signals add up when they're
+measuring the same thing. If both are high only because the writing is
+plain, that's one blind spot counted twice. I'd also lower signal two's
+weight from 0.6 to 0.3, which my simulation showed cuts the FP family from 8
+labelled AI to 6. *Why I stopped:* that's a second change, and doing it in
+the same run would have made it impossible to tell which change did what.
+
+**RQ07 (a JSON array as the body): still BROKE, a 500 with no log entry.**
+*What I'd do:* in `app.py::submit`, check `isinstance(payload, dict)` before
+calling `.get()`, return a 400, and log it with `audit.log_rejection`, the
+same guard the rate limiter's key function already has. It's a three-line
+fix. *Why I stopped:* the same rule. It's an easy win, but it isn't the
+problem my diagnosis ranked first, and adding it would have mixed two
+changes into one after run.
+
+**A new weakness my change created: EV08 and short AI text.**
+Short text is now judged by signal one alone. EV08 fell from 0.70 to 0.40,
+just above the human line. *What I'd do:* keep the 10-word minimum but
+require more text before giving any confident label, so anything under 4
+sentences can't get the high-confidence human or AI label at all, only
+unsure. *Why I stopped:* I found it in the after run, at the end of the
+milestone.
 
 **The trade I'd make if this ran for real:**
 
 <!-- Two sentences. Fewer wrong accusations means more AI text getting through.
      Say which way you'd go and WHO PAYS FOR IT. -->
 
+I'd go further towards fewer accusations: widen the unsure band and let more
+borderline AI text through as "unsure" rather than risk calling a real
+writer's work AI. The cost falls on the site and the honest writers competing
+with AI-assisted work that now slips through, which I think is fairer than
+putting it on the plain-spoken, second-language and younger writers my
+detector already accuses most, who have the least room to argue back.
 
 
 <!-- ═════════════════════════════════════════════════════════════════════
